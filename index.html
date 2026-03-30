@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agentes do Dev</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0a0a0f;
+    --surface: #12121a;
+    --border: #1e1e2e;
+    --text: #e2e2f0;
+    --muted: #6b6b8a;
+    --accent: #7c3aed;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    min-height: 100vh;
+    padding: 40px 20px 80px;
+    overflow-x: hidden;
+  }
+
+  /* Noise overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.4;
+  }
+
+  header {
+    text-align: center;
+    margin-bottom: 60px;
+    position: relative;
+    z-index: 1;
+  }
+
+  header .label {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 4px;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+
+  header h1 {
+    font-size: clamp(2rem, 5vw, 3.5rem);
+    font-weight: 800;
+    line-height: 1.1;
+    background: linear-gradient(135deg, #fff 0%, #a78bfa 50%, #7c3aed 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  header p {
+    margin-top: 14px;
+    color: var(--muted);
+    font-size: 15px;
+    max-width: 480px;
+    margin-inline: auto;
+    line-height: 1.6;
+  }
+
+  /* Pipeline */
+  .pipeline {
+    display: flex;
+    align-items: stretch;
+    justify-content: center;
+    gap: 0;
+    flex-wrap: wrap;
+    margin-bottom: 60px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .pipe-step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    cursor: pointer;
+    position: relative;
+  }
+
+  .pipe-step .bubble {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    border: 2px solid transparent;
+    transition: transform 0.2s, box-shadow 0.2s;
+    position: relative;
+    z-index: 2;
+  }
+
+  .pipe-step:hover .bubble,
+  .pipe-step.active .bubble {
+    transform: scale(1.15);
+  }
+
+  .pipe-step .pipe-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-top: 8px;
+    text-align: center;
+    max-width: 70px;
+    line-height: 1.4;
+    transition: color 0.2s;
+  }
+
+  .pipe-step:hover .pipe-label,
+  .pipe-step.active .pipe-label {
+    color: var(--text);
+  }
+
+  .pipe-arrow {
+    display: flex;
+    align-items: center;
+    padding: 0 4px;
+    padding-bottom: 24px;
+  }
+
+  .pipe-arrow svg {
+    width: 20px;
+    height: 20px;
+    color: var(--border);
+  }
+
+  /* Cards grid */
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 16px;
+    max-width: 1100px;
+    margin: 0 auto;
+    position: relative;
+    z-index: 1;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px;
+    cursor: pointer;
+    transition: border-color 0.25s, transform 0.25s, box-shadow 0.25s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  .card:hover, .card.active {
+    transform: translateY(-3px);
+  }
+
+  .card:hover::before, .card.active::before {
+    opacity: 1;
+  }
+
+  .card-top {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 16px;
+  }
+
+  .card-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    flex-shrink: 0;
+  }
+
+  .card-meta {}
+
+  .card-role {
+    font-size: 11px;
+    font-family: 'Space Mono', monospace;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 2px;
+  }
+
+  .card-name {
+    font-size: 18px;
+    font-weight: 700;
+  }
+
+  .card-desc {
+    font-size: 14px;
+    color: var(--muted);
+    line-height: 1.65;
+    margin-bottom: 16px;
+  }
+
+  .card-analogy {
+    background: rgba(255,255,255,0.04);
+    border-left: 3px solid;
+    border-radius: 0 8px 8px 0;
+    padding: 10px 14px;
+    font-size: 13px;
+    line-height: 1.55;
+    font-style: italic;
+    color: #b0b0cc;
+    display: none;
+  }
+
+  .card.active .card-analogy {
+    display: block;
+  }
+
+  .card-tasks {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 14px;
+  }
+
+  .tag {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    background: rgba(255,255,255,0.06);
+    color: var(--muted);
+    letter-spacing: 0.5px;
+  }
+
+  /* detail panel */
+  .detail {
+    display: none;
+    max-width: 1100px;
+    margin: 0 auto 32px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .detail.visible { display: block; }
+
+  .detail-inner {
+    border-radius: 16px;
+    padding: 28px 32px;
+    border: 1px solid;
+    animation: slideDown 0.25s ease;
+  }
+
+  @keyframes slideDown {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .detail-title {
+    font-size: 22px;
+    font-weight: 800;
+    margin-bottom: 6px;
+  }
+
+  .detail-subtitle {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+    opacity: 0.5;
+  }
+
+  .detail-body {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+
+  @media (max-width: 600px) {
+    .detail-body { grid-template-columns: 1fr; }
+  }
+
+  .detail-col h4 {
+    font-size: 12px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 10px;
+    font-family: 'Space Mono', monospace;
+  }
+
+  .detail-col ul {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .detail-col ul li {
+    font-size: 14px;
+    padding-left: 16px;
+    position: relative;
+    line-height: 1.5;
+    color: #c8c8e0;
+  }
+
+  .detail-col ul li::before {
+    content: '→';
+    position: absolute;
+    left: 0;
+    font-family: 'Space Mono', monospace;
+    font-size: 12px;
+    opacity: 0.5;
+  }
+
+  .hint {
+    text-align: center;
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    margin-bottom: 28px;
+    letter-spacing: 1px;
+    z-index: 1;
+    position: relative;
+  }
+
+  /* color themes per agent */
+  .c1 { --ac: #f59e0b; }
+  .c2 { --ac: #3b82f6; }
+  .c3 { --ac: #10b981; }
+  .c4 { --ac: #ec4899; }
+  .c5 { --ac: #f97316; }
+  .c6 { --ac: #8b5cf6; }
+  .c7 { --ac: #06b6d4; }
+  .c8 { --ac: #ef4444; }
+  .c9 { --ac: #84cc16; }
+
+  .card.c1:hover, .card.c1.active { border-color: #f59e0b44; box-shadow: 0 8px 30px #f59e0b18; }
+  .card.c2:hover, .card.c2.active { border-color: #3b82f644; box-shadow: 0 8px 30px #3b82f618; }
+  .card.c3:hover, .card.c3.active { border-color: #10b98144; box-shadow: 0 8px 30px #10b98118; }
+  .card.c4:hover, .card.c4.active { border-color: #ec489944; box-shadow: 0 8px 30px #ec489918; }
+  .card.c5:hover, .card.c5.active { border-color: #f9731644; box-shadow: 0 8px 30px #f9731618; }
+  .card.c6:hover, .card.c6.active { border-color: #8b5cf644; box-shadow: 0 8px 30px #8b5cf618; }
+  .card.c7:hover, .card.c7.active { border-color: #06b6d444; box-shadow: 0 8px 30px #06b6d418; }
+  .card.c8:hover, .card.c8.active { border-color: #ef444444; box-shadow: 0 8px 30px #ef444418; }
+  .card.c9:hover, .card.c9.active { border-color: #84cc1644; box-shadow: 0 8px 30px #84cc1618; }
+
+  .card::before { background: var(--ac); }
+  .card-role { color: var(--ac); }
+  .card-analogy { border-color: var(--ac); }
+  .card-icon { background: color-mix(in srgb, var(--ac) 15%, transparent); }
+
+  .pipe-step .bubble { background: color-mix(in srgb, var(--ac) 15%, transparent); border-color: color-mix(in srgb, var(--ac) 40%, transparent); }
+  .pipe-step.active .bubble { background: color-mix(in srgb, var(--ac) 30%, transparent); border-color: var(--ac); box-shadow: 0 0 16px color-mix(in srgb, var(--ac) 40%, transparent); }
+
+  .detail-inner { background: color-mix(in srgb, var(--ac) 6%, var(--surface)); border-color: color-mix(in srgb, var(--ac) 30%, transparent); }
+  .detail-title { color: var(--ac); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="label">// mapa de papéis</div>
+  <h1>Agentes do<br>Desenvolvimento</h1>
+  <p>Cada papel no time de software com sua lógica própria. Clique em qualquer card pra ver mais.</p>
+</header>
+
+<!-- Pipeline visual -->
+<div class="pipeline" id="pipeline"></div>
+
+<p class="hint">↓ clique num card pra expandir</p>
+
+<!-- Detail panel -->
+<div class="detail" id="detail">
+  <div class="detail-inner" id="detail-inner">
+    <div class="detail-title" id="d-title"></div>
+    <div class="detail-subtitle" id="d-sub"></div>
+    <div class="detail-body">
+      <div class="detail-col">
+        <h4>O que faz</h4>
+        <ul id="d-does"></ul>
+      </div>
+      <div class="detail-col">
+        <h4>Sem esse papel...</h4>
+        <ul id="d-without"></ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Cards -->
+<div class="cards" id="cards"></div>
+
+<script>
+const agents = [
+  {
+    id: 1, color: 'c1',
+    emoji: '🎯', role: 'PO', name: 'Product Owner',
+    desc: 'Define o que o software precisa fazer e em que ordem. É a voz do cliente dentro do time.',
+    analogy: 'É como o jogador que decide quais passes dar no campo — não bota a mão na bola, mas determina a jogada.',
+    tags: ['backlog', 'prioridade', 'requisitos', 'stakeholders'],
+    does: ['Escreve as histórias de usuário (User Stories)', 'Prioriza o backlog do produto', 'Valida as entregas com o cliente', 'Define critérios de aceite de cada funcionalidade'],
+    without: ['Time desenvolve coisa errada', 'Ninguém sabe o que vem primeiro', 'Cliente insatisfeito no final da sprint']
+  },
+  {
+    id: 2, color: 'c2',
+    emoji: '🔮', role: 'PM', name: 'Product Manager',
+    desc: 'Pensa no produto como negócio. Olha pro mercado, concorrência e estratégia de longo prazo.',
+    analogy: 'É o técnico do time — define a estratégia da temporada inteira, não só a próxima partida.',
+    tags: ['estratégia', 'métricas', 'roadmap', 'mercado'],
+    does: ['Define o roadmap de longo prazo', 'Analisa concorrentes e tendências', 'Traduz visão de negócio em produto', 'Acompanha métricas de sucesso (KPIs)'],
+    without: ['O produto fica sem direção estratégica', 'Time reage ao invés de planejar', 'Decisões sem embasamento de mercado']
+  },
+  {
+    id: 3, color: 'c3',
+    emoji: '🕵️', role: 'BA', name: 'Business Analyst',
+    desc: 'Traduz o que o cliente quer (muitas vezes de forma confusa) em requisitos claros para o time.',
+    analogy: 'É o intérprete do time — pega o "quero algo moderno" e transforma em especificação técnica real.',
+    tags: ['requisitos', 'documentação', 'levantamento', 'fluxos'],
+    does: ['Faz o levantamento de requisitos com o cliente', 'Mapeia processos e fluxos de negócio', 'Cria diagramas e documentações', 'Valida se o que foi pedido faz sentido'],
+    without: ['Desenvolvedores interpretam errado o que foi pedido', 'Retrabalho constante', 'Clientes surpresos com o que foi entregue']
+  },
+  {
+    id: 4, color: 'c4',
+    emoji: '🎨', role: 'UX/UI', name: 'Designer',
+    desc: 'Garante que o software seja fácil e agradável de usar. Não é só estética — é comportamento e fluxo.',
+    analogy: 'É quem escreve o roteiro de como o usuário vai *caminhar* pelo software, tela por tela.',
+    tags: ['wireframe', 'protótipo', 'figma', 'usabilidade'],
+    does: ['Cria wireframes e protótipos navegáveis', 'Define fluxos de usuário (user flows)', 'Testa usabilidade com usuários reais', 'Monta o design system do produto'],
+    without: ['Telas confusas e difíceis de usar', 'Usuário desiste da plataforma', 'Time refaz telas várias vezes']
+  },
+  {
+    id: 5, color: 'c5',
+    emoji: '🧠', role: 'TECH LEAD', name: 'Tech Lead / Arquiteto',
+    desc: 'Define como o sistema vai ser construído por dentro — tecnologias, padrões e estrutura do código.',
+    analogy: 'É quem decide a engine do jogo antes de começar a criar as fases. Sem ele, cada dev cria do seu jeito.',
+    tags: ['arquitetura', 'padrões', 'decisões técnicas', 'code review'],
+    does: ['Escolhe a stack e ferramentas do projeto', 'Define padrões de código e arquitetura', 'Faz code review das PRs críticas', 'Guia tecnicamente os outros devs'],
+    without: ['Código vira bagunça com o tempo', 'Cada dev usa um padrão diferente', 'Sistema difícil de escalar ou manter']
+  },
+  {
+    id: 6, color: 'c6',
+    emoji: '⚙️', role: 'SCRUM MASTER', name: 'Scrum Master',
+    desc: 'Garante que o processo funcione. Remove impedimentos e protege o time de distrações externas.',
+    analogy: 'É o cara que deixa o servidor rodando enquanto todo mundo codar em paz — ele resolve o que travar.',
+    tags: ['cerimônias', 'sprint', 'impedimentos', 'agile'],
+    does: ['Facilita as cerimônias ágeis (daily, planning, retro)', 'Remove bloqueios que o time não consegue resolver', 'Protege o time de mudanças de escopo na sprint', 'Mede velocidade e saúde do time'],
+    without: ['Reuniões sem sentido e sem conclusão', 'Ninguém sabe o que o outro está fazendo', 'Sprints viram uma bagunça']
+  },
+  {
+    id: 7, color: 'c7',
+    emoji: '💻', role: 'DEV', name: 'Desenvolvedor',
+    desc: 'É quem escreve o código de fato. Pode ser frontend, backend ou fullstack.',
+    analogy: 'É o jogador em campo — todos os outros papéis existem pra dar condição pra ele performar.',
+    tags: ['código', 'frontend', 'backend', 'fullstack'],
+    does: ['Implementa as funcionalidades das histórias', 'Escreve testes automatizados', 'Participa do code review dos colegas', 'Mantém e melhora o código existente'],
+    without: ['Simples: o produto não existe']
+  },
+  {
+    id: 8, color: 'c8',
+    emoji: '🔍', role: 'QA', name: 'Quality Assurance',
+    desc: 'Garante que o que foi desenvolvido realmente funciona e atende ao que foi pedido.',
+    analogy: 'É o antivírus do time — fica procurando o que está errado antes que o usuário final encontre.',
+    tags: ['testes', 'bugs', 'automação', 'validação'],
+    does: ['Testa funcionalidades antes de ir pra produção', 'Cria casos de teste e cenários de uso', 'Automatiza testes repetitivos', 'Reporta e acompanha a correção de bugs'],
+    without: ['Bugs chegam em produção', 'Cliente encontra o erro antes do time', 'Reputação do produto vai por água abaixo']
+  },
+  {
+    id: 9, color: 'c9',
+    emoji: '☁️', role: 'DEVOPS', name: 'DevOps / SRE',
+    desc: 'Cuida da infraestrutura, deploy, pipelines e disponibilidade do sistema em produção.',
+    analogy: 'É quem mantém o servidor de jogo online — sem ele, o código existe mas ninguém consegue acessar.',
+    tags: ['CI/CD', 'docker', 'cloud', 'monitoramento'],
+    does: ['Configura e mantém pipelines de deploy', 'Gerencia servidores e containers', 'Monitora performance e disponibilidade', 'Responde a incidentes em produção'],
+    without: ['Deploy vira um evento de terror', 'Ninguém sabe quando o sistema cai', 'Código pronto mas sem como subir']
+  }
+];
+
+// Build pipeline
+const pipelineEl = document.getElementById('pipeline');
+agents.forEach((a, i) => {
+  const step = document.createElement('div');
+  step.className = `pipe-step ${a.color}`;
+  step.dataset.id = a.id;
+  step.innerHTML = `<div class="bubble">${a.emoji}</div><div class="pipe-label">${a.role}</div>`;
+  step.addEventListener('click', () => toggle(a.id));
+  pipelineEl.appendChild(step);
+
+  if (i < agents.length - 1) {
+    const arrow = document.createElement('div');
+    arrow.className = 'pipe-arrow';
+    arrow.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>`;
+    pipelineEl.appendChild(arrow);
+  }
+});
+
+// Build cards
+const cardsEl = document.getElementById('cards');
+agents.forEach(a => {
+  const card = document.createElement('div');
+  card.className = `card ${a.color}`;
+  card.dataset.id = a.id;
+  card.innerHTML = `
+    <div class="card-top">
+      <div class="card-icon">${a.emoji}</div>
+      <div class="card-meta">
+        <div class="card-role">${a.role}</div>
+        <div class="card-name">${a.name}</div>
+      </div>
+    </div>
+    <div class="card-desc">${a.desc}</div>
+    <div class="card-analogy">💬 ${a.analogy}</div>
+    <div class="card-tasks">${a.tags.map(t => `<span class="tag">${t}</span>`).join('')}</div>
+  `;
+  card.addEventListener('click', () => toggle(a.id));
+  cardsEl.appendChild(card);
+});
+
+let current = null;
+
+function toggle(id) {
+  if (current === id) {
+    // close
+    current = null;
+    document.querySelectorAll('.card, .pipe-step').forEach(el => el.classList.remove('active'));
+    document.getElementById('detail').classList.remove('visible');
+    return;
+  }
+  current = id;
+  const a = agents.find(x => x.id === id);
+
+  // highlight
+  document.querySelectorAll('.card, .pipe-step').forEach(el => {
+    el.classList.toggle('active', +el.dataset.id === id);
+  });
+
+  // fill detail
+  const detail = document.getElementById('detail');
+  const inner = document.getElementById('detail-inner');
+  inner.className = `detail-inner ${a.color}`;
+  document.getElementById('d-title').textContent = `${a.emoji} ${a.name}`;
+  document.getElementById('d-sub').textContent = `// ${a.role} — o que faz na prática`;
+  document.getElementById('d-does').innerHTML = a.does.map(d => `<li>${d}</li>`).join('');
+  document.getElementById('d-without').innerHTML = (a.without || ['Impacto grave no projeto']).map(d => `<li>${d}</li>`).join('');
+  detail.classList.add('visible');
+
+  // scroll to detail
+  setTimeout(() => detail.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 50);
+}
+</script>
+</body>
+</html>
